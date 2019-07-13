@@ -18,6 +18,9 @@
 .env.test.local
 .env.production.local
 
+# sed
+*-e
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
