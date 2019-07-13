@@ -1,14 +1,30 @@
 import * as React from "react";
 import "./index.css";
 
+type State = "not" | "got";
+
+const Not = "not";
+const Got = "got";
+
+interface Wrapper<T> {
+  value: T
+}
+
 interface Tile {
   position: number;
 }
 
-class Square extends React.Component<Tile, {}> {
+class Square extends React.Component<Tile, Wrapper<State>> {
+  state: Wrapper<State> = { value: Not };
+  changeState = () => {
+    this.setState(state => ({ value: Got }));
+  };
+
   render() {
     return (
-      <button className="square">{ this.props.position }</button>
+      <button className="square" onClick={() => this.changeState() }>
+        { this.props.position + " - " + this.state.value }
+      </button>
     );
   }
 }
