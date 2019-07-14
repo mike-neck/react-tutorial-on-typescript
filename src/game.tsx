@@ -4,11 +4,21 @@ import "./index.css";
 type State = "x" | "o" | "";
 
 const Cross = "x";
-// const Circle = "o";
+const Circle = "o";
 const Null = "";
 
-interface Wrapper<T> {
+interface Contents<T> {
   value: T[];
+  next: T;
+}
+
+function nextContents(current: Contents<State>, next: State[]): Contents<State> {
+  let c = current.next;
+  if (c === Circle || c === Null) {
+    return { value: next, next: Cross };
+  } else {
+    return { value: next, next: Circle };
+  }
 }
 
 interface Tile {
@@ -27,20 +37,22 @@ class Square extends React.Component<Tile, {}> {
   }
 }
 
-class Board extends React.Component<{}, Wrapper<State>> {
-  state: Wrapper<State> = { value: new Array(9).fill(Null) };
+class Board extends React.Component<{}, Contents<State>> {
+  state: Contents<State> = { value: new Array(9).fill(Null), next: Cross };
 
   handleClick(position: number) {
     let squares = this.state.value.slice();
-    squares[position] = Cross;
-    this.setState({ value: squares });
+    if (squares[position] === Null) {
+      squares[position] = this.state.next;
+      this.setState(nextContents(this.state, squares));
+    }
   }
 
   renderSquare(position: number) {
     return <Square value={ this.state.value[position] } onClick={ () => this.handleClick(position) } />;
   }
   render() {
-    let status = "Next player: X";
+    let status = "Next player: " + this.state.next;
     return (
       <div>
         <div className="status">{ status }</div>
