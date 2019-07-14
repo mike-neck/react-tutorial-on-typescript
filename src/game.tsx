@@ -21,6 +21,27 @@ function nextContents(current: Contents<State>, next: State[]): Contents<State> 
   }
 }
 
+function winner(contents: Contents<State>): State {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  const v = contents.value;
+  for (let line of lines) {
+    const [x, y, z] = line
+    if (v[x] !== Null && v[x] === v[y] && v[x] === v[z]) {
+      return v[x];
+    }
+  }
+  return Null;
+}
+
 interface Tile {
   value: State;
   onClick: () => void;
@@ -42,17 +63,26 @@ class Board extends React.Component<{}, Contents<State>> {
 
   handleClick(position: number) {
     let squares = this.state.value.slice();
-    if (squares[position] === Null) {
+    if (squares[position] === Null && !this.hasWinner()) {
       squares[position] = this.state.next;
       this.setState(nextContents(this.state, squares));
     }
+  }
+
+  hasWinner(): boolean {
+    let win = winner(this.state);
+    return win !== Null;
   }
 
   renderSquare(position: number) {
     return <Square value={ this.state.value[position] } onClick={ () => this.handleClick(position) } />;
   }
   render() {
-    let status = "Next player: " + this.state.next;
+    let finished = this.hasWinner();
+    let status = finished?
+        "Winner: " + winner(this.state):
+        "Next player: " + this.state.next;
+
     return (
       <div>
         <div className="status">{ status }</div>
