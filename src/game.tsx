@@ -1,37 +1,43 @@
 import * as React from "react";
 import "./index.css";
 
-type State = "not" | "got";
+type State = "x" | "o" | "";
 
-const Not = "not";
-const Got = "got";
+const Cross = "x";
+// const Circle = "o";
+const Null = "";
 
 interface Wrapper<T> {
-  value: T
+  value: T[];
 }
 
 interface Tile {
-  position: number;
+  value: State;
+  onClick: () => void;
 }
 
-class Square extends React.Component<Tile, Wrapper<State>> {
-  state: Wrapper<State> = { value: Not };
-  changeState = () => {
-    this.setState(state => ({ value: Got }));
-  };
-
+class Square extends React.Component<Tile, {}> {
   render() {
     return (
-      <button className="square" onClick={() => this.changeState() }>
-        { this.props.position + " - " + this.state.value }
+      <button className="square"
+          onClick={ this.props.onClick }>
+        { this.props.value }
       </button>
     );
   }
 }
 
-class Board extends React.Component<{}, {}> {
+class Board extends React.Component<{}, Wrapper<State>> {
+  state: Wrapper<State> = { value: new Array(9).fill(Null) };
+
+  handleClick(position: number) {
+    let squares = this.state.value.slice();
+    squares[position] = Cross;
+    this.setState({ value: squares });
+  }
+
   renderSquare(position: number) {
-    return <Square position={ position } />;
+    return <Square value={ this.state.value[position] } onClick={ () => this.handleClick(position) } />;
   }
   render() {
     let status = "Next player: X";
