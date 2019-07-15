@@ -87,6 +87,7 @@ interface IndexAccess {
 interface Histories {
   entries: History[];
   next: State;
+  step: number;
 }
 
 class HistoryItem extends React.Component<IndexAccess & Actionable, {}> {
@@ -95,7 +96,7 @@ class HistoryItem extends React.Component<IndexAccess & Actionable, {}> {
       "Go to game start":
       "Go to move #" + (this.props.index + 1);
     return (
-      <li>
+      <li >
         <button onClick={ () => this.props.onClick(this.props.index) }>
           { desc }
         </button>
@@ -107,7 +108,8 @@ class HistoryItem extends React.Component<IndexAccess & Actionable, {}> {
 export class Game extends React.Component<{}, Histories> {
   state: Histories = {
     entries: [{ contents: new Array(9).fill(Null) }],
-    next: Cross
+    next: Cross,
+    step: 0
   };
 
   hasWinner(): boolean {
@@ -121,6 +123,12 @@ export class Game extends React.Component<{}, Histories> {
     return current.contents;
   }
 
+  stateOfCurrentStep(): State[] {
+    const histories = this.state.entries;
+    const cur = histories[this.state.step];
+    return cur.contents;
+  }
+
   next(): State {
     const cur = this.state.next;
     if (cur === Cross) {
@@ -131,7 +139,7 @@ export class Game extends React.Component<{}, Histories> {
   }
 
   handleClick(position: number) {
-    if (this.hasWinner()) {
+    if (this.hasWinner() || this.state.entries.length !== (this.state.step + 1)) {
       return;
     }
     const cur = this.current();
@@ -139,11 +147,16 @@ export class Game extends React.Component<{}, Histories> {
     squares[position] = this.state.next;
     this.setState({
       entries: this.state.entries.concat({ contents: squares }),
-      next: this.next()
+      next: this.next(),
+      step: this.state.step + 1
     });
   }
 
-  jumpTo(position: number) {
+  jumpTo(step: number) {
+    this.setState({
+     next: (step % 2) === 0? Cross: Circle,
+     step: step
+    });
   }
 
   render() {
@@ -153,14 +166,14 @@ export class Game extends React.Component<{}, Histories> {
         "Next player: " + this.state.next;
 
     const moves = this.state.entries.map((his, index) => {
-      return (<HistoryItem index={ index } onClick={ (pos: number) => this.jumpTo(pos) } />);
+      return (<HistoryItem key={ index } index={ index } onClick={ (pos: number) => this.jumpTo(pos) } />);
     });
 
     return (
       <div className="game">
         <div className="game-board">
           <Board
-              contents={ this.current() }
+              contents={ this.stateOfCurrentStep() }
               onClick={ (pos: number) => this.handleClick(pos) } />
         </div>
         <div className="game-info">
