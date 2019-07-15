@@ -7,21 +7,15 @@ const Cross = "x";
 const Circle = "o";
 const Null = "";
 
-interface Contents<T> {
-  value: T[];
-  next: T;
+interface History {
+  contents: State[];
 }
 
-function nextContents(current: Contents<State>, next: State[]): Contents<State> {
-  let c = current.next;
-  if (c === Circle || c === Null) {
-    return { value: next, next: Cross };
-  } else {
-    return { value: next, next: Circle };
-  }
+interface Actionable {
+  onClick: (position: number) => void;
 }
 
-function winner(contents: Contents<State>): State {
+function winner(states: State[]): State {
   const lines = [
     [0, 1, 2],
     [3, 4, 5],
@@ -32,7 +26,7 @@ function winner(contents: Contents<State>): State {
     [0, 4, 8],
     [2, 4, 6],
   ];
-  const v = contents.value;
+  const v = states;
   for (let line of lines) {
     const [x, y, z] = line
     if (v[x] !== Null && v[x] === v[y] && v[x] === v[z]) {
@@ -58,34 +52,14 @@ class Square extends React.Component<Tile, {}> {
   }
 }
 
-class Board extends React.Component<{}, Contents<State>> {
-  state: Contents<State> = { value: new Array(9).fill(Null), next: Cross };
-
-  handleClick(position: number) {
-    let squares = this.state.value.slice();
-    if (squares[position] === Null && !this.hasWinner()) {
-      squares[position] = this.state.next;
-      this.setState(nextContents(this.state, squares));
-    }
-  }
-
-  hasWinner(): boolean {
-    let win = winner(this.state);
-    return win !== Null;
-  }
-
+class Board extends React.Component<History & Actionable, {}> {
   renderSquare(position: number) {
-    return <Square value={ this.state.value[position] } onClick={ () => this.handleClick(position) } />;
+    return <Square value={ this.props.contents[position] } onClick={ () => this.props.onClick(position) } />;
   }
-  render() {
-    let finished = this.hasWinner();
-    let status = finished?
-        "Winner: " + winner(this.state):
-        "Next player: " + this.state.next;
 
+  render() {
     return (
       <div>
-        <div className="status">{ status }</div>
         <div className="board-row">
           { this.renderSquare(0) }
           { this.renderSquare(1) }
@@ -106,15 +80,65 @@ class Board extends React.Component<{}, Contents<State>> {
   }
 }
 
-export class Game extends React.Component<{}, {}> {
+interface Histories {
+  entries: History[];
+  next: State;
+}
+
+export class Game extends React.Component<{}, Histories> {
+  state: Histories = {
+    entries: [{ contents: new Array(9).fill(Null) }],
+    next: Cross
+  };
+
+  hasWinner(): boolean {
+    const win: State = winner(this.current());
+    return win !== Null;
+  }
+
+  current(): State[] {
+    const histories = this.state.entries;
+    const current = histories[histories.length - 1];
+    return current.contents;
+  }
+
+  next(): State {
+    const cur = this.state.next;
+    if (cur === Cross) {
+      return Circle;
+    } else {
+      return Cross;
+    }
+  }
+
+  handleClick(position: number) {
+    if (this.hasWinner()) {
+      return;
+    }
+    const cur = this.current();
+    const squares = cur.slice();
+    squares[position] = this.state.next;
+    this.setState({
+      entries: this.state.entries.concat({ contents: squares }),
+      next: this.next()
+    });
+  }
+
   render() {
+    let finished = this.hasWinner();
+    let status = finished?
+        "Winner: " + winner(this.current()):
+        "Next player: " + this.state.next;
+
     return (
       <div className="game">
         <div className="game-board">
-          <Board />
+          <Board
+              contents={ this.current() }
+              onClick={ (pos: number) => this.handleClick(pos) } />
         </div>
         <div className="game-info">
-          <div>{ /* status */ }</div>
+          <div>{ status }</div>
           <ol>{ /* todo */ }</ol>
         </div>
       </div>
