@@ -80,9 +80,28 @@ class Board extends React.Component<History & Actionable, {}> {
   }
 }
 
+interface IndexAccess {
+  index: number;
+}
+
 interface Histories {
   entries: History[];
   next: State;
+}
+
+class HistoryItem extends React.Component<IndexAccess & Actionable, {}> {
+  render() {
+    const desc = this.props.index === 0?
+      "Go to game start":
+      "Go to move #" + (this.props.index + 1);
+    return (
+      <li>
+        <button onClick={ () => this.props.onClick(this.props.index) }>
+          { desc }
+        </button>
+      </li>
+    );
+  }
 }
 
 export class Game extends React.Component<{}, Histories> {
@@ -124,11 +143,18 @@ export class Game extends React.Component<{}, Histories> {
     });
   }
 
+  jumpTo(position: number) {
+  }
+
   render() {
     let finished = this.hasWinner();
     let status = finished?
         "Winner: " + winner(this.current()):
         "Next player: " + this.state.next;
+
+    const moves = this.state.entries.map((his, index) => {
+      return (<HistoryItem index={ index } onClick={ (pos: number) => this.jumpTo(pos) } />);
+    });
 
     return (
       <div className="game">
@@ -139,7 +165,7 @@ export class Game extends React.Component<{}, Histories> {
         </div>
         <div className="game-info">
           <div>{ status }</div>
-          <ol>{ /* todo */ }</ol>
+          <ol>{ moves }</ol>
         </div>
       </div>
     );
